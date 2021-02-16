@@ -7,6 +7,6 @@ Script Autoit à utiliser avec le training mode de pof. Joue aléatoirement les 
 -> Toutes les commandes sont exécutées du côté P2, malheureusement elles ne s'inversent pas automatiquement
 -> Vous pouvez régler l'intervalle en bas de la fenêtre
 
-N'hésitez pas à me signaler les bugs (qu'il ne manquera certainement pas d'y avoir) ou sentez vous libres de toucher au code , je débute !
+N'hésitez pas à me signaler les bugs (qui, à mon avis, ne manqueront pas) ou sentez vous libres de toucher au code , je débute !
 
 
