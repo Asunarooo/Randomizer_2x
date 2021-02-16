@@ -13,7 +13,7 @@
 ; ----------------------------------------------------------------
 
 $mainGUI = GUICreate("Randomizer", 330 , 400, -1, -1, Default, $WS_EX_TOPMOST)
-_GUIScrollbars_Generate($mainGUI, 0, 2550)
+_GUIScrollbars_Generate($mainGUI, 0, 2650)
 Opt("GUIOnEventMode", 1)
 GUISetOnEvent($GUI_EVENT_CLOSE, "CLOSE")
 
@@ -22,6 +22,8 @@ $gardeHaute = GUICtrlCreateRadio ( "Blocking up", 180, 5)
 $gardeBasse = GUICtrlCreateRadio ( "Blocking low", 60, 25)
 $min = GUICtrlCreateInput ( "", 70, 2505, 30, 30, $ES_NUMBER)
 $max = GUICtrlCreateInput ( "", 120, 2505, 30, 30, $ES_NUMBER)
+
+$jumpAttackFrames = GUICtrlCreateInput ( "", 70, 2590, 30, 30, $ES_NUMBER)
 
 global $checkboxes[100]
 
@@ -265,6 +267,8 @@ $checkboxes[99] = GUICtrlCreateCheckbox("Checkbox" & $i+1, 70, 2445 + (20*$c)) ;
 
 GUICtrlCreateLabel ( "Intervalle entres les coups : min - max (en frames)", 70, 2480)
 
+GUICtrlCreateLabel ( "Intervalle entres un saut et son coup (en frames)", 70, 2565)
+
 GUICtrlSetState ($neutre,$GUI_CHECKED) ; Affiche la GUI
 
 ;--------------------------------------------
@@ -448,6 +452,7 @@ Global $nbCheckboxed
 Local  $r
 Local  $minFrames
 Local  $maxFrames
+Local  $sautFrames
 Local  $gardeChoisie
 
 
@@ -464,6 +469,12 @@ WinWaitActive("[CLASS:FinalBurn Neo]")
 	EndIf
 	If $maxFrames = 0 Then ; pareil, à corriger
 	$maxFrames = 300
+	EndIf
+	
+	$sautFrames = GUICtrlRead($jumpAttackFrames) ; Paramètre le nombre de frames entre le saut et l'attaque
+	
+	If $sautFrames = 0 Then 
+	$sautFrames = 24
 	EndIf
 	
 	If _IsChecked($neutre) Then ; paramètre la garde
@@ -541,27 +552,27 @@ Func Randomizer($option)
 		
 		Case $checkboxes[12]
 		Release()
-		JumpAttackP2($LP)
+		JumpAttackP2($LP, $sautFrames)
 		BackToP2Side()
 		Case $checkboxes[13]
 		Release()
-		JumpAttackP2($MP)
+		JumpAttackP2($MP, $sautFrames)
 		BackToP2Side()
 		Case $checkboxes[14]
 		Release()
-		JumpAttackP2($HP)
+		JumpAttackP2($HP, $sautFrames)
 		BackToP2Side()
 		Case $checkboxes[15]
 		Release()
-		JumpAttackP2($LK)
+		JumpAttackP2($LK, $sautFrames)
 		BackToP2Side()
 		Case $checkboxes[16]
 		Release()
-		JumpAttackP2($MK)
+		JumpAttackP2($MK, $sautFrames)
 		BackToP2Side()
 		Case $checkboxes[17]
 		Release()
-		JumpAttackP2($HK)
+		JumpAttackP2($HK, $sautFrames)
 		BackToP2Side()
 		
 	;--------------- Spéciaux quarts de cercle / DP -------------------
@@ -873,7 +884,7 @@ Func Randomizer($option)
 		Case $checkboxes[71]
 		Release()
 		ForwardJumpP2()
-		waitFrames(10)
+		waitFrames($sautFrames)
 		input3P(1)
 		
 		Case $checkboxes[72]
@@ -953,28 +964,28 @@ Func Randomizer($option)
 		Case $checkboxes[86]
 		Release()
 		ForwardJumpP2()
-		waitFrames(24)
+		waitFrames($sautFrames)
 		inputHold($DOWN)
 		oneFrameInput($HP)
 		inputRelease($DOWN)
 		Case $checkboxes[87]
 		Release()
 		ForwardJumpP2()
-		waitFrames(24)
+		waitFrames($sautFrames)
 		inputHold($DOWN)
 		oneFrameInput($LK)
 		inputRelease($DOWN)
 		Case $checkboxes[88]
 		Release()
 		ForwardJumpP2()
-		waitFrames(24)
+		waitFrames($sautFrames)
 		inputHold($DOWN)
 		oneFrameInput($MK)
 		inputRelease($DOWN)
 		Case $checkboxes[89]
 		Release()
 		ForwardJumpP2()
-		waitFrames(24)
+		waitFrames($sautFrames)
 		inputHold($DOWN)
 		oneFrameInput($HK)
 		inputRelease($DOWN)
@@ -1039,7 +1050,6 @@ Func BackToP2Side()
 	BackwardJumpP2()
 	WalkBackwardP2(60)
 EndFunc
-
 
 Func CLOSE()
 Exit

@@ -103,10 +103,10 @@ EndFunc
 
 ;--------------Crouching / Jumping attacks ------------
 
-Func JumpAttackP2($inputFinal)
+Func JumpAttackP2($inputFinal, $jumpAttackFrames)
 
 	ForwardJumpP2()
-	waitFrames(24)
+	waitFrames($jumpAttackFrames)
 	oneFrameInput($inputFinal)
 EndFunc
 
