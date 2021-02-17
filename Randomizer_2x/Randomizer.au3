@@ -14,23 +14,26 @@
 
 $mainGUI = GUICreate("Randomizer", 330 , 400, -1, -1, Default, $WS_EX_TOPMOST)
 _GUIScrollbars_Generate($mainGUI, 0, 2650)
+
 Opt("GUIOnEventMode", 1)
 GUISetOnEvent($GUI_EVENT_CLOSE, "CLOSE")
 
 $neutre = GUICtrlCreateRadio ( "Neutral", 60, 5)
 $gardeHaute = GUICtrlCreateRadio ( "Blocking up", 180, 5)
 $gardeBasse = GUICtrlCreateRadio ( "Blocking low", 60, 25)
+
 $min = GUICtrlCreateInput ( "", 70, 2505, 30, 30, $ES_NUMBER)
 $max = GUICtrlCreateInput ( "", 120, 2505, 30, 30, $ES_NUMBER)
 
 $jumpAttackFrames = GUICtrlCreateInput ( "", 70, 2590, 30, 30, $ES_NUMBER)
 
-global $checkboxes[100]
-
 ; ------------------ Disposition des checkboxes --------------------------
 ; première colonne : 70 à gauche; deuxième colonne : 200 à gauche 
 ; espace entre le titre et les cases : 25 / espace entre les sections : 30
 ;--------------------------------------------------------------------------
+
+global $checkboxes[100]
+
 
 GUICtrlCreateLabel ( "Stand", 70, 55)
 For $i = 0 to 2 ;st.P
@@ -269,7 +272,7 @@ GUICtrlCreateLabel ( "Intervalle entres les coups : min - max (en frames)", 70, 
 
 GUICtrlCreateLabel ( "Intervalle entres un saut et son coup (en frames)", 70, 2565)
 
-GUICtrlSetState ($neutre,$GUI_CHECKED) ; Affiche la GUI
+GUICtrlSetState ($neutre,$GUI_CHECKED) ; Place la garde sur neutre
 
 ;--------------------------------------------
 ;		Etiquettage des checkboxes  
@@ -435,19 +438,21 @@ GUICtrlSetData($checkboxes[94], "Guile")
 GUICtrlSetData($checkboxes[95], "Dash Low lp")
 GUICtrlSetData($checkboxes[96], "Dash Low mp")
 GUICtrlSetData($checkboxes[97], "Dash Low hp")
-; Super de Guile
-; ground trucs de Boxer
-
 
 
 ;------------------------------------------------------
 ;                 		  Main 
 ;------------------------------------------------------
 
-GUISetState(@SW_SHOW)
+; ------------------ Variables ------------------------
+; La portée est un peu aléatoire
+; il y a très certainement des erreurs
+; -----------------------------------------------------
 
 Global $nMSG 
 Global $nbCheckboxed
+Global $walkBackard = 0
+Global $clearCheckboxes = 0
 
 Local  $r
 Local  $minFrames
@@ -455,26 +460,40 @@ Local  $maxFrames
 Local  $sautFrames
 Local  $gardeChoisie
 
+; ------------------- Hotkeys -------------------------
 
-While $nMSG <> $GUI_EVENT_CLOSE ; Divers problèmes pour fermer la fenêtre. J'ai rajouté le OnEventMode et ce While. Certainement redondant mais aucune idée de ce qu'il fallait faire... au moins ça marche
-$nMSG = GUIgetMSg()
+HotKeySet($back, "WalkBackwardP2HotKey")
+HotKeySet($clear, "ClearCheckboxesHotKey") ;Actuellement, à cause du WinWaitActive, les checkboxes ne sont vidées qu'après avoir recliqué sur la fenêtre de fightcade. Trouver une solution à terme 
 
-WinWaitActive("[CLASS:FinalBurn Neo]")
+GUISetState(@SW_SHOW)
 
+
+; ---------------- Boucle principale -------------------
+
+While $nMSG <> $GUI_EVENT_CLOSE ; J'ai eu divers problèmes pour fermer la GUI. J'ai rajouté le OnEventMode et ce While qui sont certainement redondant mais dans le doute... au moins ça marche
+
+	$nMSG = GUIgetMSg()
+
+	WinWaitActive("[CLASS:FinalBurn Neo]")
+	
 	$minFrames = GUICtrlRead($min)
 	$maxFrames = GUICtrlRead($max)
 	
 	If $minFrames = 0 Then ; à corriger pour que le test soit plutôt if $minFrames = blank, mais c'est un détail
-	$minFrames = 60
+		$minFrames = 60
 	EndIf
 	If $maxFrames = 0 Then ; pareil, à corriger
-	$maxFrames = 300
+		$maxFrames = 300
 	EndIf
+	If $minFrames > $maxFrames Then
+		$minFrames = 60
+		$maxFrames = 300
+	EndIf 
 	
 	$sautFrames = GUICtrlRead($jumpAttackFrames) ; Paramètre le nombre de frames entre le saut et l'attaque
 	
 	If $sautFrames = 0 Then 
-	$sautFrames = 24
+		$sautFrames = 24
 	EndIf
 	
 	If _IsChecked($neutre) Then ; paramètre la garde
@@ -489,9 +508,9 @@ WinWaitActive("[CLASS:FinalBurn Neo]")
 		waitRandomBlockingLowNoRelease($minFrames, $maxFrames) ; Cette fonction maintient la garde basse jusqu'à ce que la fonction Release() soit appelée. J'avais d'abord écrit une fonction appelée waitRandomBlockingLow qui enlevait la garde à la fin de son exécution mais cela créeait 1 ou 2 frames pendant lesquelles le personnage se relevait avant qu'un coup, même low, ne soit exécuté. Ma solution n'est pas forcément très élégante mais c'est la seule que j'ai trouvée pour l'instant
 		$gardeChoisie = 1
 	Endif 
-
-Local $optionCheckboxed[99]
-$nbCheckboxed = -1 ; Compte le nombre de coups choisis
+	
+	Local $optionCheckboxed[99]
+	$nbCheckboxed = -1 ; Compte le nombre de coups choisis
 
 	For $i = 0 to 99 ;Place dans un tableau les coups choisis
 		If GuiCtrlRead($checkboxes[$i]) = $GUI_CHECKED Then
@@ -506,16 +525,30 @@ $nbCheckboxed = -1 ; Compte le nombre de coups choisis
 		$r = Random(0, $nbCheckboxed, 1)
 		Randomizer($optionCheckboxed[$r])
 	EndIf
+	
+	If $walkBackard = 1 Then
+		Release()
+		WalkBackwardP2(100)
+		$walkBackard = 0
+	EndIf
+	
+	If $clearCheckboxes = 1 Then
+		ClearCheckboxes()
+		$clearCheckboxes = 0
+	EndIf
 
- $optionCheckboxed = 0 ; Ligne censée vider le tableau, mais peut-être pas essentiel ? la déclaration dans la boucle le fait peut-être déjà, je m'y connais trop peu
+	$optionCheckboxed = 0 ; Ligne censée vider le tableau, mais peut-être pas essentielle ? la déclaration dans la boucle le fait peut-être déjà, je m'y connais trop peu
 WEnd
 
 
-;------------------ Fonctions --------------------------------
+;--------------------------------------------------------
+;					Fonctions 
+;--------------------------------------------------------
 
 Func Randomizer($option)
 
 	Switch $option
+	
 	;--------------- Normaux ---------------------
 	
 		Case $checkboxes[0]
@@ -902,7 +935,7 @@ Func Randomizer($option)
 
 ;--------------------- Command Moves ------------------
 
-		Case $checkboxes[73]
+		Case $checkboxes[73] ; Blanka slide
 		Release()
 		inputHold($LEFT)
 		inputHold($DOWN)
@@ -911,7 +944,7 @@ Func Randomizer($option)
 		inputRelease($DOWN)
 
 
-		Case $checkboxes[74]
+		Case $checkboxes[74] ; Dhalsim command moves
 		Release()
 		inputHold($RIGHT)
 		oneFrameInput($LP)
@@ -942,7 +975,7 @@ Func Randomizer($option)
 		oneFrameInput($HK)
 		inputRelease($RIGHT)
 
-		Case $checkboxes[80]
+		Case $checkboxes[80] ; Il s'agit en fait des normaux crouch de Dhalsim (la version ""far""). Utiliser crouchAttackNoRelease() plus haut m'oblige à inverser les normaux et les command moves de Dhalsim dans ce cas précis
 		Release()
 		crouchAttack($LP)
 		Case $checkboxes[81]
@@ -961,7 +994,7 @@ Func Randomizer($option)
 		Release()
 		crouchAttack($HK)
 
-		Case $checkboxes[86]
+		Case $checkboxes[86] ; Drills
 		Release()
 		ForwardJumpP2()
 		waitFrames($sautFrames)
@@ -990,23 +1023,23 @@ Func Randomizer($option)
 		oneFrameInput($HK)
 		inputRelease($DOWN)
 
-		Case $checkboxes[90]
+		Case $checkboxes[90] ; Knee Bazooka Guile
 		Release()
 		inputHold($RIGHT)
 		oneFrameInput($LK)
 		inputRelease($RIGHT)
-		Case $checkboxes[91]
+		Case $checkboxes[91] ; Forward kick
 		Release()
 		inputHold($LEFT)
 		oneFrameInput($MK)
 		inputRelease($LEFT)
 
-		Case $checkboxes[92]
+		Case $checkboxes[92] ;Overhead Ryu
 		Release()
 		inputHold($LEFT)
 		oneFrameInput($MP)
 		inputRelease($LEFT)
-		Case $checkboxes[93]
+		Case $checkboxes[93] ; Solar Plexus
 		Release()
 		inputHold($LEFT)
 		oneFrameInput($HP)
@@ -1050,6 +1083,21 @@ Func BackToP2Side()
 	BackwardJumpP2()
 	WalkBackwardP2(60)
 EndFunc
+
+Func WalkBackwardP2HotKey()
+	$walkBackard = 1
+EndFunc
+
+Func ClearCheckboxes()
+for $i = 0 to 99
+GUICtrlSetState ($checkboxes[$i],$GUI_UNCHECKED)
+Next
+EndFunc
+
+Func ClearCheckboxesHotKey()
+	$clearCheckboxes = 1
+EndFunc
+
 
 Func CLOSE()
 Exit
